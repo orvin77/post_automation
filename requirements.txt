@@ -1,0 +1,6 @@
+torch
+transformers
+instaloader
+instagrapi
+accelerate>=0.26.0
+Pillow>=8.1.1
