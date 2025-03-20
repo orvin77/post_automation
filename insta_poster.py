@@ -3,10 +3,19 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from instagrapi import Client
 import os
 import random
+from dotenv import load_dotenv
 
-# Instagram credentials
-USERNAME = "ahstros2018"
-PASSWORD = "Walnut-Excess4-Emcee-Mouth"
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Instagram credentials from environment variables
+USERNAME = os.getenv("IG_USERNAME")
+PASSWORD = os.getenv("IG_PASSWORD")
+
+# Check if credentials are loaded
+if not USERNAME or not PASSWORD:
+    raise ValueError("Instagram username or password not set in .env file!")
 
 # TinyLlama model details
 MODEL_NAME = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
@@ -31,9 +40,11 @@ def generate_caption(prompt):
     return generated_text
 
 
-# Path to the test image (Update when using a directory)
+# Folder where images are stored (user must set this)
+IMAGE_FOLDER = "C:/Users/orvin/post_automation/images"  # Change this to your folder path of images
+
+# Default test image 
 TEST_IMAGE_PATH = "C:/Users/orvin/post_automation/test_image.jpg"
-IMAGE_FOLDER = None  # Change this to the folder path when using multiple images
 
 def login_instagram():
     client = Client()
@@ -41,25 +52,46 @@ def login_instagram():
     return client
 
 def get_image():
+    """Retrieve an image from the specified folder or use a test image."""
     if IMAGE_FOLDER and os.path.isdir(IMAGE_FOLDER):
-        images = [os.path.join(IMAGE_FOLDER, img) for img in os.listdir(IMAGE_FOLDER) if img.endswith((".jpg", ".png"))]
+        images = [os.path.join(IMAGE_FOLDER, img) for img in os.listdir(IMAGE_FOLDER) if img.lower().endswith((".jpg", ".png"))]
         if images:
-            return random.choice(images)
-    return TEST_IMAGE_PATH
+            return random.choice(images)  # Pick a random image
+    print("⚠️ No valid images found in the folder. Using test image instead.")
+    return TEST_IMAGE_PATH  # Default test image
 
 def post_to_instagram(client, image_path, caption):
     client.photo_upload(image_path, caption)
     print(f"Posted: {image_path} with caption: {caption}")
 
+def post_story_to_instagram(client, image_path):
+    """Upload an image as an Instagram Story."""
+    client.photo_upload_to_story(image_path)
+    print(f"Story posted: {image_path}")
+
 if __name__ == "__main__":
     client = login_instagram()
-    image_path = get_image()
-    prompt = (
-        "Generate a creative and engaging Instagram caption for a beauty salon's latest post. "
-        "Use an uplifting and professional tone. Example captions: "
-        "\"Glow like never before! ✨ Book your appointment today! 💇‍♀️ #BeautySalon\" "
-        "\"Your transformation starts here! 🌸 Come visit us today. 💖 #SalonVibes\" "
-        "\n\nNew caption:"
-    )
-    caption = generate_caption(prompt)
-    post_to_instagram(client, image_path, caption)
+
+    print("Choose an option:")
+    print("1 - Post to Instagram feed")
+    print("2 - Post to Instagram story")
+    choice = input("Enter your choice (1 or 2): ").strip()
+
+    if choice == "1":
+        prompt = (
+            "Generate a creative and engaging Instagram caption for a beauty salon's latest post. "
+            "Use an uplifting and professional tone, don't include quotations in the quote. Example captions: "
+            "\"Glow like never before! ✨ Book your appointment today! 💇‍♀️ #BeautySalon\" "
+            "\"Your transformation starts here! 🌸 Come visit us today. 💖 #SalonVibes\" "
+            "\n\nNew caption:"
+        )
+        image_path = get_image()
+        caption = generate_caption(prompt)
+        post_to_instagram(client, image_path, caption)
+
+    elif choice == "2":
+        image_path = get_image()
+        post_story_to_instagram(client, image_path)
+
+    else:
+        print("Invalid choice. Please restart the program and select either 1 or 2.")
