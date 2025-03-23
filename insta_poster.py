@@ -3,6 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from instagrapi import Client
 import os
 import random
+import sys
 from dotenv import load_dotenv
 
 
@@ -57,7 +58,7 @@ def get_image():
         images = [os.path.join(IMAGE_FOLDER, img) for img in os.listdir(IMAGE_FOLDER) if img.lower().endswith((".jpg", ".png"))]
         if images:
             return random.choice(images)  # Pick a random image
-    print("⚠️ No valid images found in the folder. Using test image instead.")
+    print("No valid images found in the folder. Using test image instead.")
     return TEST_IMAGE_PATH  # Default test image
 
 def post_to_instagram(client, image_path, caption):
@@ -71,11 +72,21 @@ def post_story_to_instagram(client, image_path):
 
 if __name__ == "__main__":
     client = login_instagram()
+    
+    # Check if an argument was provided
+    if len(sys.argv) < 2:
+        print("Usage: python insta_post.py <1 for feed | 2 for story>")
+        sys.exit(1)
 
-    print("Choose an option:")
-    print("1 - Post to Instagram feed")
-    print("2 - Post to Instagram story")
-    choice = input("Enter your choice (1 or 2): ").strip()
+    choice = sys.argv[1].strip()
+
+    # Ensure the choice is valid
+    if choice not in ["1", "2"]:
+        print("Invalid choice. Use 1 for feed or 2 for story.")
+        sys.exit(1)
+
+    client = login_instagram()
+    image_path = get_image()
 
     if choice == "1":
         prompt = (
@@ -85,13 +96,8 @@ if __name__ == "__main__":
             "\"Your transformation starts here! 🌸 Come visit us today. 💖 #SalonVibes\" "
             "\n\nNew caption:"
         )
-        image_path = get_image()
         caption = generate_caption(prompt)
         post_to_instagram(client, image_path, caption)
 
     elif choice == "2":
-        image_path = get_image()
         post_story_to_instagram(client, image_path)
-
-    else:
-        print("Invalid choice. Please restart the program and select either 1 or 2.")
