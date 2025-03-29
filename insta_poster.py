@@ -49,7 +49,9 @@ TEST_IMAGE_PATH = "C:/Users/orvin/post_automation/test_image.jpg"
 
 def login_instagram():
     client = Client()
+    client.load_settings("settings.json")
     client.login(USERNAME, PASSWORD)
+    client.get_timeline_feed()
     return client
 
 def get_image():
@@ -85,8 +87,8 @@ if __name__ == "__main__":
         print("Invalid choice. Use 1 for feed or 2 for story.")
         sys.exit(1)
 
-    client = login_instagram()
     image_path = get_image()
+    client.delay_range = [1, 3] #adds random delay between 4.5 - 5 mins
 
     if choice == "1":
         prompt = (
